@@ -10,7 +10,7 @@ namespace HRMS.Controllers
     [ApiController]// Asp understand that this class is the Controller
     public class EmployeesController : ControllerBase  // there are something done i cane inherit it from ControllerBase
     {
-        public List<Employee> employee = new List<Employee>()
+        public static List<Employee> employee = new List<Employee>()
         {
 
             new Employee { Id = 1,FirstName="ahmad",lastName="Emad",Email="ahmad123@gmail.com",Position="developer",BirthDate=new DateTime(2001,2,28),phoneNumber="0792432565" ,IsActive=true,StartDate=new DateTime(),Salary=1000},
@@ -22,10 +22,10 @@ namespace HRMS.Controllers
 
 
  };
+        // CRUD operations
 
-
-        [HttpGet("GetByCraiteria")]//for Get type and route name
-        public IActionResult GetByCraiteria(string? position)// Endpoint // IActionResult allwo to return response
+        [HttpGet]//for Get type and route name 
+        public IActionResult GetByCraiteria(string? position, string? name)// Endpoint // IActionResult allwo to return response //   quere parametiers => show in url
         {
 
             // return Ok(new { Name = "emp", Age = 30 });// 200 ok
@@ -40,12 +40,12 @@ namespace HRMS.Controllers
 
 
             var data = from emp in employee
-                       where (position==null||emp.Position== position)
+                       where ((position == null || emp.Position.ToUpper().Contains(position.ToUpper())) && (name == null || emp.FirstName.ToUpper().Contains(name.ToUpper())))
                        orderby emp.Id descending
                        select new EmployeeDto//// dont return object with type model or take  return object with type model u should use DTO
                        {
                            Id = emp.Id,
-                           Name = emp.FirstName +" "+ emp.lastName,
+                           Name = emp.FirstName + " " + emp.lastName,
                            Position = emp.Position,
                            BirthDate = emp.BirthDate,
                            StartDate = emp.StartDate,
@@ -57,12 +57,12 @@ namespace HRMS.Controllers
 
         }
 
-        [HttpGet("GetById")]
+        [HttpGet("{id:long}")]  //Route paramiter // {id:long}=> to ensure that the id is long type and not string or int or any other type
         public IActionResult GetById(long id)
         {
 
-            var emp = employee.Select(x=>new EmployeeDto
-            {Id=x.Id,Name=x.FirstName +" "+ x.lastName, Position=x.Position,BirthDate=x.BirthDate,StartDate=x.StartDate,EndDate=x.EndDate})
+            var emp = employee.Select(x => new EmployeeDto
+            { Id = x.Id, Name = x.FirstName + " " + x.lastName, Position = x.Position, BirthDate = x.BirthDate, StartDate = x.StartDate, EndDate = x.EndDate })
                 .FirstOrDefault(x => x.Id == id);//FirstOrDefault=> return the first one with and if i enter invalid id will return null without exeption
                                                  //Select()=> to ensure that will return Dto not object model
             if (emp == null)
@@ -70,7 +70,7 @@ namespace HRMS.Controllers
                 return NotFound("employee not found");
             }
             else
-            return Ok(emp);
+                return Ok(emp);
 
 
 
@@ -79,15 +79,14 @@ namespace HRMS.Controllers
 
 
         [HttpPost]
-        public IActionResult Add(SaveEmployeeDto employeeDto)
-        {
+        public IActionResult Add(SaveEmployeeDto employeeDto) {// request => Body  hidden from url 
 
 
             var emp = new Employee()
-            { 
+            {
 
 
-                Id = (employee.LastOrDefault()?.Id??0)+1,
+                Id = (employee.LastOrDefault()?.Id ?? 0) + 1,
                 FirstName = employeeDto.FirstName,
                 lastName = employeeDto.lastName,
                 Position = employeeDto.Position,
@@ -108,13 +107,91 @@ namespace HRMS.Controllers
 
 
 
+
+
+        [HttpPut("{id:long}")]// resource Update (whole object)
+                 //  [HttpPatch]// the same as put but the difference is that put will update all the fields and patch will update only the fields that i want to update
+        public IActionResult Update([FromBody] long id, [FromQuery] SaveEmployeeDto employeeDto)//[FromBody] (for Dto),[FromQuery](for id)    by defalute but i swape it 
+        {
+            if (id != employeeDto.Id)
+            {
+                return BadRequest("Id missMatch");
+            }
+            {
+                var emp = employee.FirstOrDefault(x => x.Id == employeeDto.Id);
+                if (emp == null)
+                {
+                    return NotFound("employee not found");
+                }
+                else
+                {
+                    emp.FirstName = employeeDto.FirstName;
+                    emp.lastName = employeeDto.lastName;
+                    emp.Position = employeeDto.Position;
+                    emp.BirthDate = employeeDto.BirthDate;
+                    emp.StartDate = employeeDto.StartDate;
+                    emp.EndDate = employeeDto.EndDate;
+                    emp.Email = employeeDto.Email;
+                    emp.IsActive = employeeDto.IsActive;
+                    emp.phoneNumber = employeeDto.phoneNumber;
+                    emp.Salary = employeeDto.Salary;
+                    return Ok(emp.Id);
+                }
+
+            }
+        }
+
+        [HttpDelete("{id:long}")]
+            public IActionResult Delete(long id)
+            {
+
+                var emp = employee.FirstOrDefault(x => x.Id == id);
+                if (emp == null)
+                {
+
+                    return NotFound("employee not found");
+                }
+                else
+                {
+                    employee.Remove(emp);
+                    return Ok();
+                }
+
+
+
+            }
+
+
+
+        }
     }
 
 
-   
-   
+
+// simple data type=> string , int , long ,...==>(by defalute ) query paramiters
+// complix data type => model , Dto , object ...==>(by defalute ) request Body 
+
+
+// Query paramiter => [frome query]
+
+// request Body => [frome Body] for sinsative information like password or email or phone number
+
+// method can use more than one query paramiter but only one paramiter can be request Body and the rest should be query paramiter
+
+// HttpDelete  or HttpPut or HttpPatch or HttpPost => request Body but HttpGet => query paramiter
+
+
+// Restfull API =>  is the way to design API that follow the principles of REST (Representational State Transfer) and use HTTP methods (GET, POST, PUT, DELETE) to perform CRUD operations on resources (data entities)
+
+// the principles of RESTfull are: 1-dont named the API methods with verbs (Get, Post, Put, Delete) but with nouns (Employees, Customers, Orders) and the beast dont named it  2- use HTTP methods to perform CRUD operations 3- use status codes to indicate the result of the operation 4- use HATEOAS (Hypermedia as the Engine of Application State) to provide links to related resources 5- use versioning to manage changes in the API 6- use caching to improve performance 7- use security to protect the API from unauthorized access
 
 
 
 
-}
+
+
+
+
+
+
+
