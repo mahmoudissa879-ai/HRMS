@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using HRMS.Models;
 using HRMS.Dtos.Employees;
+using HRMS.DbContexts;
 namespace HRMS.Controllers
 {
 
@@ -10,6 +11,19 @@ namespace HRMS.Controllers
     [ApiController]// Asp understand that this class is the Controller
     public class EmployeesController : ControllerBase  // there are something done i cane inherit it from ControllerBase
     {
+
+
+        //HRMSContext _context=new HRMSContext(); normal way 
+
+        // depandency injection
+       
+        private readonly HRMSContext _context;
+   
+      public EmployeesController(HRMSContext dbContext) // here i will receive the instance of the context from the DI container(container => file program.cs)
+        {
+            _context = dbContext;
+        }
+
         public static List<Employee> employee = new List<Employee>()
         {
 
@@ -39,7 +53,9 @@ namespace HRMS.Controllers
             ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-            var data = from emp in employee
+            var data = from emp in _context.Employees
+                       from dep in _context.Departments.Where(x=>x.Id==emp.DepartmentId).DefaultIfEmpty()// join/ inner join// with department table to get the department name//DefaultIfEmpty()=>left join to return the employee even if he has no department
+                       from manager in _context.Employees.Where(x=>x.Id==emp.ManagerId).DefaultIfEmpty()
                        where ((position == null || emp.Position.ToUpper().Contains(position.ToUpper())) && (name == null || emp.FirstName.ToUpper().Contains(name.ToUpper())))
                        orderby emp.Id descending
                        select new EmployeeDto//// dont return object with type model or take  return object with type model u should use DTO
@@ -49,7 +65,16 @@ namespace HRMS.Controllers
                            Position = emp.Position,
                            BirthDate = emp.BirthDate,
                            StartDate = emp.StartDate,
-                           EndDate = emp.EndDate
+                           EndDate = emp.EndDate,
+                           Salary = emp.Salary,
+                           Email = emp.Email,
+                           IsActive = emp.IsActive,
+                           phoneNumber = emp.phoneNumber,
+                           DepartmentId = emp.DepartmentId,
+                           ManagerId = emp.ManagerId,
+                           DepartmentName = dep.Name ,
+                          ManagerName=manager.FirstName+" "+manager.lastName
+
 
                        };
 
