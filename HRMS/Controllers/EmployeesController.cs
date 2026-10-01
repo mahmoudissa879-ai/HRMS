@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using HRMS.Models;
+﻿using HRMS.DbContexts;
 using HRMS.Dtos.Employees;
-using HRMS.DbContexts;
+using HRMS.Models;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System.Runtime.Intrinsics.Arm;
 namespace HRMS.Controllers
 {
 
@@ -52,7 +53,7 @@ namespace HRMS.Controllers
 
             ////////////////////////////////////////////////////////////////////////////////////////////
 
-
+            ///IQueryable=> before execute the query to DB i can add more conditions to it and when i execute it will execute all the conditions in one query to DB
             var data = from emp in _context.Employees
                        from dep in _context.Departments.Where(x=>x.Id==emp.DepartmentId).DefaultIfEmpty()// join/ inner join// with department table to get the department name//DefaultIfEmpty()=>left join to return the employee even if he has no department
                        from manager in _context.Employees.Where(x=>x.Id==emp.ManagerId).DefaultIfEmpty()
@@ -82,12 +83,27 @@ namespace HRMS.Controllers
 
         }
 
-        [HttpGet("{id:long}")]  //Route paramiter // {id:long}=> to ensure that the id is long type and not string or int or any other type
+        [HttpGet("{id:long}")]//Route paramiter // {id:long}=> to ensure that the id is long type and not string or int or any other type
         public IActionResult GetById(long id)
         {
 
-            var emp = employee.Select(x => new EmployeeDto
-            { Id = x.Id, Name = x.FirstName + " " + x.lastName, Position = x.Position, BirthDate = x.BirthDate, StartDate = x.StartDate, EndDate = x.EndDate })
+            var emp = _context.Employees.Select(x => new EmployeeDto
+            { Id = x.Id,
+                Name = x.FirstName + " " + x.lastName,
+                Position = x.Position,
+                BirthDate = x.BirthDate,
+                StartDate = x.StartDate,
+                EndDate = x.EndDate,
+                IsActive = x.IsActive,
+                phoneNumber = x.phoneNumber,
+                DepartmentId = x.DepartmentId,
+                ManagerId = x.ManagerId,
+                DepartmentName = "dep.Name",
+                ManagerName = " manager.FirstName +"
+
+
+
+            })
                 .FirstOrDefault(x => x.Id == id);//FirstOrDefault=> return the first one with and if i enter invalid id will return null without exeption
                                                  //Select()=> to ensure that will return Dto not object model
             if (emp == null)
@@ -111,7 +127,7 @@ namespace HRMS.Controllers
             {
 
 
-                Id = (employee.LastOrDefault()?.Id ?? 0) + 1,
+                // Id =  (employee.LastOrDefault()?.Id ?? 0) + 1,
                 FirstName = employeeDto.FirstName,
                 lastName = employeeDto.lastName,
                 Position = employeeDto.Position,
@@ -121,12 +137,16 @@ namespace HRMS.Controllers
                 Email = employeeDto.Email,
                 IsActive = employeeDto.IsActive,
                 phoneNumber = employeeDto.phoneNumber,
-                Salary = employeeDto.Salary
+                Salary = employeeDto.Salary,
+                DepartmentId = employeeDto.DepartmentId,
+                ManagerId = employeeDto.ManagerId
+
 
             };
 
 
-            employee.Add(emp);
+           _context.Employees.Add(emp);// here dont go to DB i must write  _context.SaveChanges(); why its important? => if i have more than one     _context.Employees.Add(emp) and for every add go to DB=>  low performance then the _context.SaveChanges(); go once
+            _context.SaveChanges();
             return Ok(emp.Id);
         }
 
@@ -142,8 +162,8 @@ namespace HRMS.Controllers
             {
                 return BadRequest("Id missMatch");
             }
-            {
-                var emp = employee.FirstOrDefault(x => x.Id == employeeDto.Id);
+            
+                var emp = _context.Employees.FirstOrDefault(x => x.Id == employeeDto.Id);
                 if (emp == null)
                 {
                     return NotFound("employee not found");
@@ -160,26 +180,30 @@ namespace HRMS.Controllers
                     emp.IsActive = employeeDto.IsActive;
                     emp.phoneNumber = employeeDto.phoneNumber;
                     emp.Salary = employeeDto.Salary;
+                    emp.DepartmentId = employeeDto.DepartmentId;
+                    emp.ManagerId = employeeDto.ManagerId;
+                
+                    _context.SaveChanges();
+
+
                     return Ok(emp.Id);
                 }
 
-            }
         }
 
         [HttpDelete("{id:long}")]
             public IActionResult Delete(long id)
             {
 
-                var emp = employee.FirstOrDefault(x => x.Id == id);
+                var emp = _context.Employees.FirstOrDefault(x => x.Id == id);
                 if (emp == null)
                 {
 
                     return NotFound("employee not found");
                 }
                 else
-                {
-                    employee.Remove(emp);
-                    return Ok();
+              _context.Employees.Remove(emp);
+            return Ok();
                 }
 
 
@@ -189,7 +213,7 @@ namespace HRMS.Controllers
 
 
         }
-    }
+    
 
 
 

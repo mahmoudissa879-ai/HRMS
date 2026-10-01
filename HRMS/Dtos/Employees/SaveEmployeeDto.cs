@@ -19,6 +19,10 @@
         public DateTime? EndDate { get; set; }
         public decimal? Salary { get; set; }
 
+        public long? DepartmentId { get; set; }// foreign key
+        public long? ManagerId { get; set; }// foreign key
+
+
     }
 
 }
