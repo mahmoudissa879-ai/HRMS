@@ -8,7 +8,7 @@
 
         public string? Email { get; set; }
 
-        public string Position { get; set; }
+        public long? PositionId { get; set; }
         public DateTime BirthDate { get; set; }
 
         public string phoneNumber { get; set; }

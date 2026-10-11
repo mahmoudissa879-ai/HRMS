@@ -3,6 +3,7 @@ using HRMS.Dtos.Employees;
 using HRMS.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Runtime.Intrinsics.Arm;
 namespace HRMS.Controllers
 {
@@ -25,22 +26,11 @@ namespace HRMS.Controllers
             _context = dbContext;
         }
 
-        public static List<Employee> employee = new List<Employee>()
-        {
 
-            new Employee { Id = 1,FirstName="ahmad",lastName="Emad",Email="ahmad123@gmail.com",Position="developer",BirthDate=new DateTime(2001,2,28),phoneNumber="0792432565" ,IsActive=true,StartDate=new DateTime(),Salary=1000},
-                   new Employee { Id = 2,FirstName="sami",lastName="tareq",Email="sami123@gmail.com",Position="HR",BirthDate=new DateTime(2001,2,28),phoneNumber="07725458895" ,IsActive=true,StartDate=new DateTime(),Salary=1000},
-
-                               new Employee { Id = 3,FirstName="mahmoud",lastName="hamed",Email="mahmoud23@gmail.com",Position="manager",BirthDate=new DateTime(2001,2,28),phoneNumber="0795645665" ,IsActive=true,StartDate=new DateTime(),Salary=1000},
-
-                                           new Employee { Id = 4,FirstName="saleh",lastName="omar",Email="saleh123@gmail.com",Position="developer",BirthDate=new DateTime(2001,2,28),phoneNumber="0789089055" ,IsActive=true,StartDate=new DateTime(),Salary=1000}
-
-
- };
         // CRUD operations
 
         [HttpGet]//for Get type and route name 
-        public IActionResult GetByCraiteria(string? position, string? name)// Endpoint // IActionResult allwo to return response //   quere parametiers => show in url
+        public IActionResult GetByCraiteria([FromQuery]SearchEmployeeDto searchEmployeeDto)// Endpoint // IActionResult allwo to return response //   quere parametiers => show in url
         {
 
             // return Ok(new { Name = "emp", Age = 30 });// 200 ok
@@ -52,34 +42,48 @@ namespace HRMS.Controllers
 
 
             ////////////////////////////////////////////////////////////////////////////////////////////
-
-            ///IQueryable=> before execute the query to DB i can add more conditions to it and when i execute it will execute all the conditions in one query to DB
-            var data = from emp in _context.Employees
-                       from dep in _context.Departments.Where(x=>x.Id==emp.DepartmentId).DefaultIfEmpty()// join/ inner join// with department table to get the department name//DefaultIfEmpty()=>left join to return the employee even if he has no department
-                       from manager in _context.Employees.Where(x=>x.Id==emp.ManagerId).DefaultIfEmpty()
-                       where ((position == null || emp.Position.ToUpper().Contains(position.ToUpper())) && (name == null || emp.FirstName.ToUpper().Contains(name.ToUpper())))
-                       orderby emp.Id descending
-                       select new EmployeeDto//// dont return object with type model or take  return object with type model u should use DTO
-                       {
-                           Id = emp.Id,
-                           Name = emp.FirstName + " " + emp.lastName,
-                           Position = emp.Position,
-                           BirthDate = emp.BirthDate,
-                           StartDate = emp.StartDate,
-                           EndDate = emp.EndDate,
-                           Salary = emp.Salary,
-                           Email = emp.Email,
-                           IsActive = emp.IsActive,
-                           phoneNumber = emp.phoneNumber,
-                           DepartmentId = emp.DepartmentId,
-                           ManagerId = emp.ManagerId,
-                           DepartmentName = dep.Name ,
-                          ManagerName=manager.FirstName+" "+manager.lastName
+            ///
 
 
-                       };
+            try {
+                ///IQueryable=> before execute the query to DB i can add more conditions to it and when i execute it will execute all the conditions in one query to DB
+                var data = from emp in _context.Employees
+                           from dep in _context.Departments.Where(x => x.Id == emp.DepartmentId).DefaultIfEmpty()// join/ inner join// with department table to get the department name//DefaultIfEmpty()=>left join to return the employee even if he has no department
+                           from manager in _context.Employees.Where(x => x.Id == emp.ManagerId).DefaultIfEmpty()
+                           from position in _context.lookups.Where(x => x.Id == emp.PositionId).DefaultIfEmpty()
+                           where ((searchEmployeeDto.PositionId == null || emp.PositionId == searchEmployeeDto.PositionId)) && (searchEmployeeDto.Name == null || emp.FirstName.ToUpper().Contains(searchEmployeeDto.Name.ToUpper()))
+                           orderby emp.Id descending
+                           select new EmployeeDto//// dont return object with type model or take  return object with type model u should use DTO
+                           {
+                               Id = emp.Id,
+                               Name = emp.FirstName + " " + emp.lastName,
+                               PositionId = emp.PositionId,
+                               PositionName = position.Name,
+                               BirthDate = emp.BirthDate,
+                               StartDate = emp.StartDate,
+                               EndDate = emp.EndDate,
+                               Salary = emp.Salary,
+                               Email = emp.Email,
+                               IsActive = emp.IsActive,
+                               phoneNumber = emp.phoneNumber,
+                               DepartmentId = emp.DepartmentId,
+                               ManagerId = emp.ManagerId,
+                               DepartmentName = dep.Name,
+                               ManagerName = manager.FirstName + " " + manager.lastName
 
-            return Ok(data);
+
+                           };
+
+                return Ok(data);
+
+            }
+
+            catch (Exception ex)
+            {
+                return StatusCode(500, new Exception(ex.Message));
+            }
+
+
 
         }
 
@@ -87,31 +91,68 @@ namespace HRMS.Controllers
         public IActionResult GetById(long id)
         {
 
-            var emp = _context.Employees.Select(x => new EmployeeDto
-            { Id = x.Id,
-                Name = x.FirstName + " " + x.lastName,
-                Position = x.Position,
-                BirthDate = x.BirthDate,
-                StartDate = x.StartDate,
-                EndDate = x.EndDate,
-                IsActive = x.IsActive,
-                phoneNumber = x.phoneNumber,
-                DepartmentId = x.DepartmentId,
-                ManagerId = x.ManagerId,
-                DepartmentName = "dep.Name",
-                ManagerName = " manager.FirstName +"
+
+            try {
+
+
+                var emp = _context.Employees.Select(x => new EmployeeDto
+                {
+                    Id = x.Id,
+                    Name = x.FirstName + " " + x.lastName,
+                    PositionId = x.PositionId,
+                    PositionName = x.Lookup.Name,
+                    BirthDate = x.BirthDate,
+                    StartDate = x.StartDate,
+                    EndDate = x.EndDate,
+                    IsActive = x.IsActive,
+                    phoneNumber = x.phoneNumber,
+                    DepartmentId = x.DepartmentId,
+                    ManagerId = x.ManagerId,
+                    // projection => select() => i call navigation proparty i can return only the fields that i want and not all the fields in the model Department and manager
+                    DepartmentName = x.Department.Name,
+                    ManagerName = x.Manager.FirstName + " " + x.Manager.lastName
 
 
 
-            })
-                .FirstOrDefault(x => x.Id == id);//FirstOrDefault=> return the first one with and if i enter invalid id will return null without exeption
-                                                 //Select()=> to ensure that will return Dto not object model
-            if (emp == null)
-            {
-                return NotFound("employee not found");
+                })
+                    .FirstOrDefault(x => x.Id == id);//FirstOrDefault=> return the first one with and if i enter invalid id will return null without exeption
+                                                     //Select()=> to ensure that will return Dto not object model
+
+
+
+
+
+
+
+                // Lazy loading => opposite of Egger loading
+
+
+
+
+
+
+
+
+
+
+
+                // Egger loading => include() => to include the related data from the Department table this for performance
+                /*   var emp = _context.Employees.Include(x=>x.Department).Include(x=>x.Manager).FirstOrDefault(x => x.Id == id);*///Include()=> to include the related data from the Department table this for performance 
+                if (emp == null)
+                {
+                    return NotFound("employee not found");
+                }
+                else
+                    return Ok(emp);
+
+
             }
-            else
-                return Ok(emp);
+            catch (Exception ex)
+            {
+                return StatusCode(500, new Exception(ex.Message));
+            }
+
+
 
 
 
@@ -122,32 +163,47 @@ namespace HRMS.Controllers
         [HttpPost]
         public IActionResult Add(SaveEmployeeDto employeeDto) {// request => Body  hidden from url 
 
-
-            var emp = new Employee()
+            try
             {
 
-
-                // Id =  (employee.LastOrDefault()?.Id ?? 0) + 1,
-                FirstName = employeeDto.FirstName,
-                lastName = employeeDto.lastName,
-                Position = employeeDto.Position,
-                BirthDate = employeeDto.BirthDate,
-                StartDate = employeeDto.StartDate,
-                EndDate = employeeDto.EndDate,
-                Email = employeeDto.Email,
-                IsActive = employeeDto.IsActive,
-                phoneNumber = employeeDto.phoneNumber,
-                Salary = employeeDto.Salary,
-                DepartmentId = employeeDto.DepartmentId,
-                ManagerId = employeeDto.ManagerId
+                var emp = new Employee()
+                {
 
 
-            };
+                    // Id =  (employee.LastOrDefault()?.Id ?? 0) + 1,
+                    FirstName = employeeDto.FirstName,
+                    lastName = employeeDto.lastName,
+                    PositionId = employeeDto.PositionId,
+                    BirthDate = employeeDto.BirthDate,
+                    StartDate = employeeDto.StartDate,
+                    EndDate = employeeDto.EndDate,
+                    Email = employeeDto.Email,
+                    IsActive = employeeDto.IsActive,
+                    phoneNumber = employeeDto.phoneNumber,
+                    Salary = employeeDto.Salary,
+                    DepartmentId = employeeDto.DepartmentId,
+                    ManagerId = employeeDto.ManagerId
 
 
-           _context.Employees.Add(emp);// here dont go to DB i must write  _context.SaveChanges(); why its important? => if i have more than one     _context.Employees.Add(emp) and for every add go to DB=>  low performance then the _context.SaveChanges(); go once
-            _context.SaveChanges();
-            return Ok(emp.Id);
+                };
+
+
+                _context.Employees.Add(emp);// here dont go to DB i must write  _context.SaveChanges(); why its important? => if i have more than one     _context.Employees.Add(emp) and for every add go to DB=>  low performance then the _context.SaveChanges(); go once
+                _context.SaveChanges();
+                return Ok(emp.Id);
+
+
+            }
+     
+
+
+
+                   catch (Exception ex)
+            {
+                return StatusCode(500, new Exception(ex.Message));
+            }
+
+
         }
 
 
@@ -156,46 +212,65 @@ namespace HRMS.Controllers
 
         [HttpPut("{id:long}")]// resource Update (whole object)
                  //  [HttpPatch]// the same as put but the difference is that put will update all the fields and patch will update only the fields that i want to update
-        public IActionResult Update([FromBody] long id, [FromQuery] SaveEmployeeDto employeeDto)//[FromBody] (for Dto),[FromQuery](for id)    by defalute but i swape it 
+        public IActionResult Update( long id,  SaveEmployeeDto employeeDto)//[FromBody] (for Dto),[FromQuery](for id)    by defalute but i swape it 
         {
-            if (id != employeeDto.Id)
+ 
+
+            try
             {
-                return BadRequest("Id missMatch");
-            }
-            
-                var emp = _context.Employees.FirstOrDefault(x => x.Id == employeeDto.Id);
-                if (emp == null)
+                if (id != employeeDto.Id)// validation
+                {
+                    return BadRequest("id not match");
+                } 
+
+
+
+ var emp = _context.Employees.FirstOrDefault(x => x.Id == employeeDto.Id);
+
+                if (emp == null)// validation
+               
                 {
                     return NotFound("employee not found");
-                }
-                else
-                {
-                    emp.FirstName = employeeDto.FirstName;
-                    emp.lastName = employeeDto.lastName;
-                    emp.Position = employeeDto.Position;
-                    emp.BirthDate = employeeDto.BirthDate;
-                    emp.StartDate = employeeDto.StartDate;
-                    emp.EndDate = employeeDto.EndDate;
-                    emp.Email = employeeDto.Email;
-                    emp.IsActive = employeeDto.IsActive;
-                    emp.phoneNumber = employeeDto.phoneNumber;
-                    emp.Salary = employeeDto.Salary;
-                    emp.DepartmentId = employeeDto.DepartmentId;
-                    emp.ManagerId = employeeDto.ManagerId;
-                
-                    _context.SaveChanges();
+                } 
+
+                emp.FirstName = employeeDto.FirstName;
+                emp.lastName = employeeDto.lastName;
+                emp.PositionId = employeeDto.PositionId;
+                emp.BirthDate = employeeDto.BirthDate;
+                emp.StartDate = employeeDto.StartDate;
+                emp.EndDate = employeeDto.EndDate;
+                emp.Email = employeeDto.Email;
+                emp.IsActive = employeeDto.IsActive;
+                emp.phoneNumber = employeeDto.phoneNumber;
+                emp.Salary = employeeDto.Salary;
+                emp.DepartmentId = employeeDto.DepartmentId;
+                emp.ManagerId = employeeDto.ManagerId;
+
+                _context.SaveChanges();
 
 
-                    return Ok(emp.Id);
-                }
+                return Ok(emp.Id);
+            }
+
+
+            catch (Exception ex)
+            {
+                return StatusCode(500, new Exception (ex.Message));
+            }
+
+
+            
+              
+              
 
         }
 
         [HttpDelete("{id:long}")]
             public IActionResult Delete(long id)
             {
-
-                var emp = _context.Employees.FirstOrDefault(x => x.Id == id);
+            try
+            {
+var emp = _context.Employees.FirstOrDefault(x => x.Id == id);
                 if (emp == null)
                 {
 
@@ -204,11 +279,19 @@ namespace HRMS.Controllers
                 else
               _context.Employees.Remove(emp);
             return Ok();
-                }
-
-
-
             }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new Exception(ex.Message));
+            }
+
+
+
+        }
+
+
+
+    }
 
 
 
