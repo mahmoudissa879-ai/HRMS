@@ -44,7 +44,7 @@ namespace HRMS.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Departments", (string)null);
+                    b.ToTable("Departments");
                 });
 
             modelBuilder.Entity("HRMS.Models.Employee", b =>
@@ -88,6 +88,9 @@ namespace HRMS.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<long?>("UserId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("lastName")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -106,7 +109,11 @@ namespace HRMS.Migrations
 
                     b.HasIndex("PositionId");
 
-                    b.ToTable("Employees", (string)null);
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL");
+
+                    b.ToTable("Employees");
                 });
 
             modelBuilder.Entity("HRMS.Models.User", b =>
@@ -126,11 +133,14 @@ namespace HRMS.Migrations
 
                     b.Property<string>("UserName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.HasIndex("UserName")
+                        .IsUnique();
+
+                    b.ToTable("Users");
 
                     b.HasData(
                         new
@@ -163,7 +173,7 @@ namespace HRMS.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("lookups", (string)null);
+                    b.ToTable("lookups");
 
                     b.HasData(
                         new
@@ -238,11 +248,17 @@ namespace HRMS.Migrations
                         .WithMany()
                         .HasForeignKey("PositionId");
 
+                    b.HasOne("HRMS.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
                     b.Navigation("Department");
 
                     b.Navigation("Lookup");
 
                     b.Navigation("Manager");
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

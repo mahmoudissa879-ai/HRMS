@@ -8,6 +8,7 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.EntityFrameworkCore;
 
 namespace HRMS.Controllers
 {
@@ -74,10 +75,14 @@ namespace HRMS.Controllers
             if (user.IsAdmin) {
                 claims.Add(new Claim(ClaimTypes.Role, "Admin"));
 }
-
             else {
 
-                // if the user is not admin then he is employee
+                var employee = _context.Employees.Include(x => x.Lookup).FirstOrDefault(x => x.UserId == user.Id);
+           
+              
+                    claims.Add(new Claim(ClaimTypes.Role,employee.Lookup.Name));
+           
+               
 
             }
 

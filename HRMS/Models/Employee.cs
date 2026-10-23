@@ -40,8 +40,9 @@ namespace HRMS.Models
         public long? PositionId { get; set; }// foreign key
         public lookup? Lookup { get; set; }// navigation property for the relationship with the Position entity
 
-
-
+        [ForeignKey("User")]
+        public long? UserId { get; set; }// foreign key
+        public User? User { get; set; }// navigation property for the relationship with the User entity
 
 
     }

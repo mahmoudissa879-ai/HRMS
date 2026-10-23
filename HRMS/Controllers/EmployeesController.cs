@@ -6,11 +6,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Runtime.Intrinsics.Arm;
+using System.Security.Claims;
 namespace HRMS.Controllers
 {
 
     //Data Annotations (Extra informations )
-    [Authorize]
+    [Authorize] // any request to this controller must be authenticated (token)
     [Route("api/[controller]")]// Route which Controller should requistAPI go /////[controller] => when run the app will replace it with class name( Employees ) 
     [ApiController]// Asp understand that this class is the Controller
     public class EmployeesController : ControllerBase  // there are something done i cane inherit it from ControllerBase
@@ -31,6 +32,10 @@ namespace HRMS.Controllers
 
         // CRUD operations
 
+
+
+     
+
         [HttpGet]//for Get type and route name 
         public IActionResult GetByCraiteria([FromQuery]SearchEmployeeDto searchEmployeeDto)// Endpoint // IActionResult allwo to return response //   quere parametiers => show in url
         {
@@ -48,6 +53,18 @@ namespace HRMS.Controllers
 
 
             try {
+
+                // extract from token : role, userId
+                var role = User.FindFirst(ClaimTypes.Role)?.Value;  // stored in the token when the user login and i can extract it from the token in any request to the API
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+
+
+
+
+
+
+
                 ///IQueryable=> before execute the query to DB i can add more conditions to it and when i execute it will execute all the conditions in one query to DB
                 var data = from emp in _context.Employees
                            from dep in _context.Departments.Where(x => x.Id == emp.DepartmentId).DefaultIfEmpty()// join/ inner join// with department table to get the department name//DefaultIfEmpty()=>left join to return the employee even if he has no department
@@ -71,10 +88,18 @@ namespace HRMS.Controllers
                                DepartmentId = emp.DepartmentId,
                                ManagerId = emp.ManagerId,
                                DepartmentName = dep.Name,
-                               ManagerName = manager.FirstName + " " + manager.lastName
+                               ManagerName = manager.FirstName + " " + manager.lastName,
+                               UserId= emp.UserId
 
 
                            };
+
+
+                if (role.ToUpper() != "ADMIN" && role.ToUpper() != "HR")
+                {
+
+                    data = data.Where(x => x.UserId == long.Parse(userId));// if the user is not admin or hr he can see only his data
+                }
 
                 return Ok(data);
 
@@ -161,12 +186,30 @@ namespace HRMS.Controllers
         }
 
 
-
+        [Authorize(Roles = "HR,Admin")]// the request have token + role HR or Admin
         [HttpPost]
         public IActionResult Add(SaveEmployeeDto employeeDto) {// request => Body  hidden from url 
 
             try
             {
+                var user = new User()
+                {
+                    Id = 0,
+                    UserName = employeeDto.FirstName+" "+employeeDto.lastName+"_Hrms ",
+                    HashedPassword = BCrypt.Net.BCrypt.HashPassword($"{employeeDto.FirstName}123"),// hash password
+                    IsAdmin = false
+
+                };
+
+                var userExist = _context.Users.Any(x => x.UserName.ToUpper() == user.UserName.ToUpper());
+
+                if (userExist)
+                {
+                    return BadRequest("user name already exist");
+
+                }
+                _context.Users.Add(user);
+               // _context.SaveChanges();
 
                 var emp = new Employee()
                 {
@@ -184,7 +227,9 @@ namespace HRMS.Controllers
                     phoneNumber = employeeDto.phoneNumber,
                     Salary = employeeDto.Salary,
                     DepartmentId = employeeDto.DepartmentId,
-                    ManagerId = employeeDto.ManagerId
+                    ManagerId = employeeDto.ManagerId,
+                  //  UserId = user.Id
+                  User = user // (important this is a thired way to use navigation proparty)  here i can assign the user object to the employee object and when i save the employee object it will save the user object as well because of the relationship between them
 
 
                 };
@@ -210,7 +255,7 @@ namespace HRMS.Controllers
 
 
 
-
+        [Authorize(Roles = "HR,Admin")]// the request have token + role HR or Admin
 
         [HttpPut("{id:long}")]// resource Update (whole object)
                  //  [HttpPatch]// the same as put but the difference is that put will update all the fields and patch will update only the fields that i want to update
@@ -266,7 +311,7 @@ namespace HRMS.Controllers
               
 
         }
-
+        [Authorize(Roles = "HR,Admin")]// the request have token + role HR or Admin
         [HttpDelete("{id:long}")]
             public IActionResult Delete(long id)
             {

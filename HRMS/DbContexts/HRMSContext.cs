@@ -69,6 +69,22 @@ namespace HRMS.DbContexts
             // 2- encryption=>converting the password into unreadable format using an encryption algorithm and a key, and it can be decrypted back to the original password using the same key
 
 
+
+// to make sure that each employee has a unique user account and to prevent multiple employees from sharing the same user account
+
+            modelBuilder.Entity<Employee>().
+                HasIndex(u => u.UserId ).// like index in array, then database dont need to search the whole table to find the user id
+                IsUnique();
+
+
+            modelBuilder.Entity<User>().
+                HasIndex(u => u.UserName).
+                IsUnique();
+
+
+
+
+
         }
 
 
