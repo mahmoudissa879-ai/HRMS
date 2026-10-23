@@ -44,7 +44,7 @@ namespace HRMS.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Departments");
+                    b.ToTable("Departments", (string)null);
                 });
 
             modelBuilder.Entity("HRMS.Models.Employee", b =>
@@ -106,7 +106,40 @@ namespace HRMS.Migrations
 
                     b.HasIndex("PositionId");
 
-                    b.ToTable("Employees");
+                    b.ToTable("Employees", (string)null);
+                });
+
+            modelBuilder.Entity("HRMS.Models.User", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("HashedPassword")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsAdmin")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1L,
+                            HashedPassword = "$2a$11$HzPJwNE.sqSGWyGFKcYeAuY/cgkdq6dQL70YNez/SVvXs6Me8AHKC",
+                            IsAdmin = true,
+                            UserName = "Admin"
+                        });
                 });
 
             modelBuilder.Entity("HRMS.Models.lookup", b =>
@@ -130,7 +163,7 @@ namespace HRMS.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("lookups");
+                    b.ToTable("lookups", (string)null);
 
                     b.HasData(
                         new

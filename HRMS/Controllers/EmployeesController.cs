@@ -1,6 +1,7 @@
 ﻿using HRMS.DbContexts;
 using HRMS.Dtos.Employees;
 using HRMS.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ namespace HRMS.Controllers
 {
 
     //Data Annotations (Extra informations )
+    [Authorize]
     [Route("api/[controller]")]// Route which Controller should requistAPI go /////[controller] => when run the app will replace it with class name( Employees ) 
     [ApiController]// Asp understand that this class is the Controller
     public class EmployeesController : ControllerBase  // there are something done i cane inherit it from ControllerBase

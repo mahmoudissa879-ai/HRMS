@@ -1,5 +1,6 @@
 ﻿using HRMS.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace HRMS.DbContexts
 
@@ -25,7 +26,7 @@ namespace HRMS.DbContexts
             // we can use the modelBuilder to configure the model, such as setting up relationships between entities, configuring table names, etc.
             // we will use the modelBuilder to configure the model in the future if needed
 
-         
+
             // seeding=>lookup table 
 
             modelBuilder.Entity<lookup>().HasData(
@@ -39,19 +40,33 @@ namespace HRMS.DbContexts
 
 
 
-                     //Department Types => [Major code=1]
+                //Department Types => [Major code=1]
                 new lookup { Id = 5, MajorCode = 1, MinorCode = 0, Name = "Department Types" },
                 new lookup { Id = 6, MajorCode = 1, MinorCode = 1, Name = "finance" },
-                new lookup { Id = 7, MajorCode =1, MinorCode = 2, Name = "adminstrative" },
+                new lookup { Id = 7, MajorCode = 1, MinorCode = 2, Name = "adminstrative" },
                 new lookup { Id = 8, MajorCode = 1, MinorCode = 3, Name = "Technical" }
 
 
             );
 
 
+            /// seeding for Admin user
+            /// 
+            /// 
+            /// BCrypt.Net.BCrypt.HashPassword("Admin123")=>$2a$11$HzPJwNE.sqSGWyGFKcYeAuY/cgkdq6dQL70YNez/SVvXs6Me8AHKC (take this value from migration file )but it will be different every time
+
+            modelBuilder.Entity<User>().HasData(
+                new User { Id = 1, UserName="Admin", IsAdmin =true, HashedPassword= "$2a$11$HzPJwNE.sqSGWyGFKcYeAuY/cgkdq6dQL70YNez/SVvXs6Me8AHKC" }
+            );
+
+            ///  hashing and encryption
 
 
 
+
+            // 1- hashing=>converting the password into unreadable format using a hashing algorithm
+
+            // 2- encryption=>converting the password into unreadable format using an encryption algorithm and a key, and it can be decrypted back to the original password using the same key
 
 
         }
@@ -63,11 +78,11 @@ namespace HRMS.DbContexts
         // DbSet(Table) is a collection of entities of a specific type that can be queried from the database. It represents a table in the database and allows you to perform CRUD operations on that table.
         public DbSet<Employee> Employees { get; set; }// the name of the DbSet property (Employees) will be used as the name of the table in the database.and the property in the model class (Employee) will be used as the name of the columns in the table.
 
-      public DbSet<Department> Departments{ get; set; }
+        public DbSet<Department> Departments { get; set; }
         public DbSet<lookup> lookups { get; set; }
 
 
-
+        public DbSet<User> Users { get; set; }
 
 
 
